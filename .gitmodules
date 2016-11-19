@@ -1,0 +1,6 @@
+[submodule "libs/phpClickHouse"]
+	path = libs/phpClickHouse
+	url = https://github.com/smi2/phpClickHouse.git
+[submodule "libs/shell"]
+	path = libs/shell
+	url = https://github.com/isublimity/shell.git

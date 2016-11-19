@@ -1,6 +1,7 @@
-assets/*
-!assets/.gitignore
-protected/runtime/*
-!protected/runtime/.gitignore
-protected/data/*.db
-themes/classic/views/
+composer.phar
+composer.lock
+composer-test.lock
+vendor/
+.idea
+.DS_STORE
+config.php
