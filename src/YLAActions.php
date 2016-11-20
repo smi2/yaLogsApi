@@ -8,19 +8,19 @@ class YLAActions
 
     public function setToken($token)
     {
-        \Shell::warning("Set token:".$token);
+        \Shell::info("Set token:".$token);
         $this->token=$token;
     }
 
     public function setCounter($counter)
     {
-        \Shell::warning("Set counter_id:".$counter);
+        \Shell::info("Set counter_id:".$counter);
         $this->counter=$counter;
     }
 
     public function setConfig($config)
     {
-        \Shell::warning("Set config file:".$config);
+        \Shell::info("Set config file:".$config);
         $this->config_file=$config;
     }
 
@@ -56,6 +56,11 @@ class YLAActions
         return true;
     }
 
+    public function msg($message,$color=[])
+    {
+        \Shell::msg($message,$color);
+    }
+
     /**
      * Создать таблицы
      *
@@ -87,6 +92,34 @@ class YLAActions
     public function importCommand()
     {
         $this->init();
+        $n=new \yaLogsApi\Connector($this->counter,$this->token);
+
+        $listRequests=$n->getList();
+        if ($listRequests)
+        {
+            foreach ($listRequests as $request)
+            {
+                $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus(),\Shell::bold);
+
+                $request=$n->info($request);
+//                $this->msg("Try cancel");$n->cancel($request);
+
+                if ($request->isProcessed())
+                {
+                    $this->msg("Download....");
+                    $n->download($request);
+                }
+            }
+        }
+        else
+        {
+            if ($n->evaluate($this->config['hits_fields'],'hits',date('Y-m-d',strtotime('-1 day')),date('Y-m-d',strtotime('-1 day'))))
+            {
+
+                $n->makeNew($this->config['hits_fields'],'hits',date('Y-m-d',strtotime('-1 day')),date('Y-m-d',strtotime('-1 day')));
+            }
+        }
+
         return true;
     }
 
