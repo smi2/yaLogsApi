@@ -47,12 +47,14 @@ class YLAActions
             $this->config[$key]=$config[$key];
         }
 
-        if (!empty($config['token'])) $this->token=$config['token'];
-        if (!empty($config['counter_id'])) $this->counter=$config['counter_id'];
+        if (! $this->token && !empty($config['token'])) $this->token=$config['token'];
+        if (!$this->counter && !empty($config['counter_id'])) $this->counter=$config['counter_id'];
 
 
         if (! $this->token) throw new Exception('Not set token, use --token=XXX or config');
         if (! $this->counter) throw new Exception('Not set counter_id, use --counter=XXX or config');
+
+        $this->msg("Use counter : ".$this->counter);
         return true;
     }
 
@@ -99,9 +101,12 @@ class YLAActions
         {
             foreach ($listRequests as $request)
             {
-                $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus(),\Shell::bold);
+                $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus());
 
                 $request=$n->info($request);
+                $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus(),\Shell::bold);
+
+
 //                $this->msg("Try cancel");$n->cancel($request);
 
                 if ($request->isProcessed())

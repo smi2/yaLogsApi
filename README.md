@@ -13,7 +13,8 @@ Run:
 
 ./yla.sh create --config=conf.json
 
-./yla.sh import --config=conf.json --counters=1234,4567,7891
+./yla.sh import [--token=XZXCV] [--counter=1234]
+
 
 ```
 
