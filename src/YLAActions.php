@@ -68,7 +68,7 @@ class YLAActions
      *
      * @return bool
      */
-    public function createCommand()
+    public function dbcreateCommand()
     {
         $this->init();
         return true;
@@ -80,12 +80,71 @@ class YLAActions
      *
      * @return bool
      */
-    public function dropCommand()
+    public function dbdropCommand()
     {
         $this->init();
         return true;
     }
 
+
+    /**
+     * Создвть запрос, даты
+     *
+     * @param $date1 string Дата-С
+     * @param $date2 string Дата-По
+     * @return bool
+     */
+    public function newCommand($date1,$date2)
+    {
+        $date1=strtotime($date1);
+        $date2=strtotime($date2);
+
+        $this->msg("Create request");
+        $this->msg("\tDate 1\t:".date('Y-m-d',$date1));
+        $this->msg("\tDate 2\t:".date('Y-m-d',$date2));
+
+
+        $this->init();
+        $n=new \yaLogsApi\Connector($this->counter,$this->token);
+
+
+        $evaluate=$n->evaluate($this->config['hits_fields'],'hits',date('Y-m-d',$date1),date('Y-m-d',$date2));
+        if ($evaluate)
+        {
+            $this->msg("evaluate = ".$evaluate);
+            $n->makeNew($this->config['hits_fields'],'hits',date('Y-m-d',$date1),date('Y-m-d',$date2));
+        }
+
+        return true;
+    }
+
+    /**
+     * Отменить запрос
+     *
+     * @param $requestid string id-запроса
+     * @return bool
+     */
+    public function cancelCommand($requestid)
+    {
+
+        $this->init();
+        $n=new \yaLogsApi\Connector($this->counter,$this->token);
+
+
+        $listRequests=$n->getList();
+        if ($listRequests) {
+            foreach ($listRequests as $request) {
+                if ($request->getRequestId()==$requestid)
+                {
+                    $this->msg("Try cancel, request_id = ".$request->getRequestId());
+
+                    $n->cancel($request);
+                }
+
+            }
+        }
+        return true;
+    }
     /**
      * Загрузить данные
      *
@@ -101,27 +160,16 @@ class YLAActions
         {
             foreach ($listRequests as $request)
             {
-                $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus());
+                $this->msg("Request_Id:".$request->getRequestId()."\t in date1=".$request->getDate1().' '.$request->getDate2());
 
                 $request=$n->info($request);
                 $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus(),\Shell::bold);
-
-
-//                $this->msg("Try cancel");$n->cancel($request);
 
                 if ($request->isProcessed())
                 {
                     $this->msg("Download....");
                     $n->download($request);
                 }
-            }
-        }
-        else
-        {
-            if ($n->evaluate($this->config['hits_fields'],'hits',date('Y-m-d',strtotime('-1 day')),date('Y-m-d',strtotime('-1 day'))))
-            {
-
-                $n->makeNew($this->config['hits_fields'],'hits',date('Y-m-d',strtotime('-1 day')),date('Y-m-d',strtotime('-1 day')));
             }
         }
 

@@ -11,10 +11,11 @@ Run:
 
 ./yla.sh help
 
-./yla.sh create --config=conf.json
+./yla.sh new  --date1=2016-10-10 --date2=2016-10-20 [--config=conf.json]
 
 ./yla.sh import [--token=XZXCV] [--counter=1234]
 
+./yla.sh cancel --requestid=12345
 
 ```
 
