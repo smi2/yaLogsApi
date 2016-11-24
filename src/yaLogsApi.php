@@ -102,6 +102,10 @@ class Connector
         {
             return intval($r['log_request_evaluation']['max_possible_day_quantity']);
         }
+        else
+        {
+            var_dump($r);
+        }
         return false;
     }
 
@@ -120,23 +124,36 @@ class Connector
         }
         return false;
     }
+    public function getDownloadFileName(logRequest $request,$partNumber,$gzip)
+    {
+        $file_name='/tmp/YAM_'.$request->getHash().'_'.$request->getPartSize($partNumber,false).'_part'.$partNumber.($gzip?'.tsv.deflated':'.tsv');
+        return $file_name;
+    }
     /**
      * Скачивание части подготовленных логов обработанного запроса
      *
      * @param logRequest $request
      * @param $partNumber int номер части подготовленных логов обработанного запроса.
+     * @return string
      */
-    public function download(logRequest $request,$partNumber=0)
+    public function downloadPart(logRequest $request,$partNumber,$gzip=false)
     {
-        $this->transport()->downloadToFile(
-            '/management/v1/counter/{counterId}/logrequest/'.$request->getRequestId().'/part/'.$partNumber.'/download',
-            '/tmp/YAM_'.$request->getHash()
 
+        $file_name=$this->getDownloadFileName($request,$partNumber,$gzip);
+
+        $n=new \ClickHouseDB\Client(['host'=>'192.168.1.20','username'=>'default','password'=>'','port'=>'8123']);
+        $n->ping();
+        $req=$n->insertBatchStream('visits_fields',['CounterID','WatchID','DateTime'],'TabSeparatedWithNames');
+
+        $this->transport()->downloadToFile(
+            $req,
+            '/management/v1/counter/{counterId}/logrequest/'.$request->getRequestId().'/part/'.$partNumber.'/download',
+            $file_name,
+            $gzip
         );
 
-        /*
-         * GET https://api-metrika.yandex.ru/management/v1/counter/{counterId}/logrequest/{requestId}/part/{partNumber}/download
-         */
+        return $file_name;
+
     }
 
     /**
@@ -145,8 +162,11 @@ class Connector
      */
     public function clean(logRequest $request)
     {
-        /*
-         * POST https://api-metrika.yandex.ru/management/v1/counter/{counterId}/logrequest/{requestId}/clean
-         */
+        $r=$this->transport()->postJson('/management/v1/counter/{counterId}/logrequest/{requestId}/clean',[],['requestId'=>$request->getRequestId()]);
+        if (isset($r['log_request']))
+        {
+            return new logRequest($r['log_request']);
+        }
+        return false;
     }
 }

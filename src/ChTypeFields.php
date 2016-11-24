@@ -4,6 +4,7 @@ class ChTypeFields
 {
     // copypaster https://raw.githubusercontent.com/yndx-metrika/logs_api_integration/master/configs/ch_types.json
     private static $field = [
+
         "ym:s:counterID" => "UInt32",
         "ym:s:watchIDs" => "Array(UInt64)",
         "ym:s:dateTime" => "DateTime",
@@ -22,7 +23,7 @@ class ChTypeFields
         "ym:s:goalsPrice" => "Array(Int64)",
         "ym:s:goalsOrder" => "Array(String)",
         "ym:s:goalsCurrency" => "Array(String)",
-        "ym:s:clientID" => "UInt64",
+        "ym:s:firstPartyCookie"=>'String',
         "ym:s:lastTrafficSource" => "String",
         "ym:s:lastAdvEngine" => "String",
         "ym:s:lastReferalSource" => "String",
@@ -37,7 +38,7 @@ class ChTypeFields
         "ym:s:lastDirectPhraseOrCond" => "String",
         "ym:s:lastDirectPlatformType" => "String",
         "ym:s:lastDirectPlatform" => "String",
-        "ym:s:lastDirectSearchPhrase" => "String",
+//        "ym:s:lastDirectSearchPhrase" => "String",
         "ym:s:lastDirectConditionType" => "String",
         "ym:s:lastCurrencyID" => "String",
         "ym:s:from" => "String",
@@ -128,6 +129,7 @@ class ChTypeFields
         "ym:s:networkType" => "String",
         "ym:s:visitID" => "UInt64",
         "ym:s:date" => "Date",
+
         "ym:pv:watchID" => "UInt64",
         "ym:pv:counterID" => "UInt32",
         "ym:pv:dateTime" => "DateTime",
@@ -201,6 +203,18 @@ class ChTypeFields
         "ym:pv:date" => "Date"
     ];
 
+    public static function getAllFieldVisits()
+    {
+        foreach (self::$field as $key=>$type)
+        {
+            if (stripos($key,'ym:s:')!==false)
+            {
+                $out[]=$key;
+            }
+
+        }
+        return $out;
+    }
     public static function getFieldType($name)
     {
         if (isset(self::$field[$name])) return self::$field[$name];

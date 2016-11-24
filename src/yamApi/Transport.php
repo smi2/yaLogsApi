@@ -33,6 +33,7 @@ class Transport
         $url_vars=$url_templates;
         $url_vars['counterId']=$this->counter_id;
 
+
         foreach ($url_vars as $key=>$val)
         {
             $url=str_ireplace('{'.$key.'}',urlencode($val),$url);
@@ -40,6 +41,7 @@ class Transport
 
 
         $request=new \Curler\Request();
+        $request->timeOut(100000);
 
         $request->header('Authorization','OAuth '.$this->token);
         $request->header('Content-Type','application/x-yametrika+json');
@@ -86,21 +88,15 @@ class Transport
             )->json()
         ;
     }
-    public function downloadToFile($url,$file,$isGz=false)
+    public function downloadToFile(\Curler\Request $CHInsertRequest,$url,$file,$isGz=true)
     {
-        $request=$this->makecurlRequest($url);
-        $request->httpCompression(true);
+        $requestRead=$this->makecurlRequest($url);
+        $requestRead->httpCompression(true);
 
-        $fout = fopen($file, 'w');
-        if ($isGz) {
-            fwrite($fout, "\x1f\x8b\x08\x00\x00\x00\x00\x00");
-        }
-        $request->setResultFileHandle($fout, $isGz)->setCallbackFunction(function (Request $request) {
-            fclose($request->getResultFileHandle());
-        });
+        $CHInsertRequest->httpCompression(true);
 
-
-        $this->executeRequest($request);
+        $n=new \ClickhouseStreamReadInsert($CHInsertRequest,$requestRead);
+        $n->makeHappy();
     }
 
 

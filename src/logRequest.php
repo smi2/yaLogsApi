@@ -20,6 +20,7 @@ class logRequest
      * @var int
      */
     private $size=-1;
+    private $parts=[];
 
     public function __construct($data=[])
     {
@@ -32,6 +33,8 @@ class logRequest
             $this->date2=$data['date2'];
             $this->fields=$data['fields'];
             $this->status=$data['status'];
+            if (!empty($data['parts']))
+            $this->parts=$data['parts'];
         }
     }
 
@@ -104,8 +107,50 @@ class logRequest
         return ('processed'==$this->getStatus());
     }
 
+    private function humanFileSize($size, $unit = '')
+    {
+        if ((!$unit && $size >= 1 << 30) || $unit == 'GB') {
+            return number_format($size / (1 << 30), 2) . ' GB';
+        }
+        if ((!$unit && $size >= 1 << 20) || $unit == 'MB') {
+            return number_format($size / (1 << 20), 2) . ' MB';
+        }
+        if ((!$unit && $size >= 1 << 10) || $unit == 'KB') {
+            return number_format($size / (1 << 10), 2) . ' KB';
+        }
+
+        return number_format($size) . ' bytes';
+    }
+
+    public function getPartsNumbers()
+    {
+        if (!sizeof($this->parts)) return [];
+        $out=[];
+        foreach ($this->parts as $part)
+        {
+            $out[$part['part_number']]=1;
+        }
+        return array_keys($out);
+    }
+    public function getPartSize($num,$humanSize=true)
+    {
+        if (!isset($this->parts[$num]['size'])) return false;
+        if ($humanSize)
+        {
+            return $this->humanFileSize($this->parts[$num]['size']);
+        }
+        return $this->parts[$num]['size'];
+    }
+    public function getParts()
+    {
+        return $this->parts;
+    }
     public function getHash()
     {
-        return $this->getCounterId().'_'.$this->getRequestId().'_'.str_replace([' ',':','-'],['_'],$this->getDate1().'_'.$this->getDate2());
+        return
+                $this->getCounterId().'_'.
+                $this->getRequestId().'_'.
+                str_replace([' ',':','-'],['_'],$this->getDate1().'_'.$this->getDate2()).'_'.
+                substr(sha1(implode(',',$this->fields)),0,4);
     }
 }

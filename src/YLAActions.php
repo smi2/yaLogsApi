@@ -36,7 +36,7 @@ class YLAActions
         }
 
         //
-        $need_keys=['visits_fields','hits_fields','clickhouse'];
+        $need_keys=['visits','hits','clickhouse'];
 
         foreach ($need_keys as $key)
         {
@@ -71,6 +71,19 @@ class YLAActions
     public function dbcreateCommand()
     {
         $this->init();
+
+
+        foreach ($this->config['hits'] as $col)
+        {
+            $type=\yaLogsApi\ChTypeFields::getFieldType($col);
+
+            $colName=ucwords(explode(":",$col)[2]);
+            $cols[]="\t$colName \t $type";
+
+        }
+        echo "CREATE TABLE visits_fields (\n";
+        echo implode(",\n",$cols);
+        echo ") ENGINE=StripeLog\n";
         return true;
     }
 
@@ -108,11 +121,23 @@ class YLAActions
         $n=new \yaLogsApi\Connector($this->counter,$this->token);
 
 
-        $evaluate=$n->evaluate($this->config['hits_fields'],'hits',date('Y-m-d',$date1),date('Y-m-d',$date2));
+        $ishist=true;
+
+
+        if ($ishist)
+        {
+            $config_key='hits';
+        }
+        else
+        {
+            $config_key='visits';
+        }
+        $evaluate=$n->evaluate($this->config[$config_key],$config_key,date('Y-m-d',$date1),date('Y-m-d',$date2));
+        var_dump($evaluate);
         if ($evaluate)
         {
             $this->msg("evaluate = ".$evaluate);
-            $n->makeNew($this->config['hits_fields'],'hits',date('Y-m-d',$date1),date('Y-m-d',$date2));
+            $n->makeNew($this->config[$config_key],$config_key,date('Y-m-d',$date1),date('Y-m-d',$date2));
         }
 
         return true;
@@ -124,8 +149,9 @@ class YLAActions
      * @param $requestid string id-запроса
      * @return bool
      */
-    public function cancelCommand($requestid)
+    public function dropCommand($requestid=0,$all=false)
     {
+
 
         $this->init();
         $n=new \yaLogsApi\Connector($this->counter,$this->token);
@@ -134,11 +160,16 @@ class YLAActions
         $listRequests=$n->getList();
         if ($listRequests) {
             foreach ($listRequests as $request) {
-                if ($request->getRequestId()==$requestid)
+                if ($request->getRequestId()==$requestid || $all)
                 {
                     $this->msg("Try cancel, request_id = ".$request->getRequestId());
 
+                    $n->clean($request);
                     $n->cancel($request);
+
+
+                    $request=$n->info($request);
+                    $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus(),\Shell::bold);
                 }
 
             }
@@ -150,7 +181,7 @@ class YLAActions
      *
      * @return bool
      */
-    public function importCommand()
+    public function downloadCommand($gzip=false)
     {
         $this->init();
         $n=new \yaLogsApi\Connector($this->counter,$this->token);
@@ -167,12 +198,30 @@ class YLAActions
 
                 if ($request->isProcessed())
                 {
-                    $this->msg("Download....");
-                    $n->download($request);
+                    foreach ($request->getPartsNumbers() as $partsNumber)
+                    {
+                        $this->msg("Download.... part = $partsNumber , size ".$request->getPartSize($partsNumber).' GZ='.($gzip?'true':'false'));
+
+                        $start_time=microtime(true);
+
+                        $fn=$n->downloadPart($request,$partsNumber,$gzip);
+                        $this->msg("done, download part to ".$fn."\t".filesize($fn).' bytes,use time '.round(microtime(true)-$start_time,1),[Shell::bold]);
+                    }
+                    break;
                 }
+
             }
         }
 
+        return true;
+    }
+
+
+    public function sendCommand()
+    {
+        $file_name='/tmp/YAM_16750087_29_20161119_20161119_04db_58122561_part0.tsv.deflated';
+        $n=new ClickHouseDB\Client(['host'=>'192.168.1.20','username'=>'default','password'=>'','port'=>'8123']);
+        print_r($n->select('SELECT * FROM hits_fields LIMIT 4')->rows());
         return true;
     }
 

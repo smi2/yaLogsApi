@@ -22,23 +22,9 @@ Run:
 
 
 
-steam 
+GZ:
+```
 
-```php
+printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" |cat - /tmp/YAM_16750087_29_20161119_20161119_04db_58122561_part0.tsv.gz | gzip -dc > /tmp/_ERAW
 
-
-// Open two file handles.
-$in = fopen('test.txt.bz2', 'rb');
-$out = fopen('test-uppercase.txt', 'wb');
-
-// Add a decode filter to the first.
-stream_filter_prepend($in, 'bzip2.decompress', STREAM_FILTER_READ);
-
-// Now copy. All of the filters are applied here.
-stream_copy_to_stream($in, $out);
-
-// Clean up.
-fclose($in);
-fclose($out);
-
-``` 
+```
