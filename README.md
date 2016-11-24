@@ -6,6 +6,9 @@ Docs:
 * [Кастомные модели атрибуции](https://nbviewer.jupyter.org/github/miptgirl/attribution_modelling/blob/master/220volt_case.ipynb)
 * [Скрипт интеграция с Logs API](https://github.com/yndx-metrika/logs_api_integration)
 
+
+!! Скрипт не доделан !!
+
 Run:
 ```bash
 
