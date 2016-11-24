@@ -141,20 +141,29 @@ class Connector
 
         $file_name=$this->getDownloadFileName($request,$partNumber,$gzip);
 
-        $n=new \ClickHouseDB\Client(['host'=>'192.168.1.20','username'=>'default','password'=>'','port'=>'8123']);
-        $n->ping();
-        $req=$n->insertBatchStream('visits_fields',['CounterID','WatchID','DateTime'],'TabSeparatedWithNames');
-
         $this->transport()->downloadToFile(
-            $req,
             '/management/v1/counter/{counterId}/logrequest/'.$request->getRequestId().'/part/'.$partNumber.'/download',
             $file_name,
             $gzip
         );
-
         return $file_name;
-
     }
+
+     /**
+     * Stream части подготовленных логов обработанного запроса
+     *
+     * @param logRequest $request
+     * @param $partNumber int номер части подготовленных логов обработанного запроса.
+     * @return resource
+     */
+    public function streamPart(logRequest $request,$partNumber)
+    {
+        return $this->transport()->downloadToStream(
+            '/management/v1/counter/{counterId}/logrequest/'.$request->getRequestId().'/part/'.$partNumber.'/download'
+        );
+    }
+
+
 
     /**
      * Очистка подготовленных для скачивания логов обработанного запроса

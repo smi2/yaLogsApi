@@ -176,6 +176,18 @@ class YLAActions
         }
         return true;
     }
+
+    private function streamDownload(\yaLogsApi\Connector $n,\yaLogsApi\logRequest $request,$partsNumber,$gzip)
+    {
+        $start_time=microtime(true);
+        $this->msg("Download.... part = $partsNumber , size ".$request->getPartSize($partsNumber).' GZ='.($gzip?'true':'false'));
+
+
+//        $fn=$n->downloadPart($request,$partsNumber,$gzip);
+        $this->msg('done, stream part ,use time '.round(microtime(true)-$start_time,1),[Shell::bold]);
+
+    }
+
     /**
      * Загрузить данные
      *
@@ -194,18 +206,13 @@ class YLAActions
                 $this->msg("Request_Id:".$request->getRequestId()."\t in date1=".$request->getDate1().' '.$request->getDate2());
 
                 $request=$n->info($request);
-                $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus(),\Shell::bold);
+                $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus().' ',\Shell::bold);
 
                 if ($request->isProcessed())
                 {
                     foreach ($request->getPartsNumbers() as $partsNumber)
                     {
-                        $this->msg("Download.... part = $partsNumber , size ".$request->getPartSize($partsNumber).' GZ='.($gzip?'true':'false'));
-
-                        $start_time=microtime(true);
-
-                        $fn=$n->downloadPart($request,$partsNumber,$gzip);
-                        $this->msg("done, download part to ".$fn."\t".filesize($fn).' bytes,use time '.round(microtime(true)-$start_time,1),[Shell::bold]);
+                        $this->streamDownload($n,$request,$partsNumber,$gzip);
                     }
                     break;
                 }
