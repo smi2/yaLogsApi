@@ -77,16 +77,27 @@ class Transport
      * @param $url
      * @return resource
      */
-    private function makefopenRequest($url)
+    private function makefopenRequest($url,$encode=false)
     {
         $url=$this->templateUrl($url);
 
+        $header  = ['Authorization: OAuth '.$this->token,"Transfer-Encoding: chunked"];
+
+        if ($encode=='gzip')
+        {
+            $header[]="Accept-Encoding: gzip";
+        }
+        if ($encode=='deflate')
+        {
+            $header[]="Accept-Encoding: deflate";
+        }
         $o=[
             "http" =>
                 [
+                    "protocol_version"  => "1.1",
                     "method"  => "GET",
                     "timeout" => $this->timeout,
-                    "header"  => ['Authorization: OAuth '.$this->token]
+                    "header"  => $header
                 ]
         ];
 
@@ -120,9 +131,9 @@ class Transport
      * @param $url
      * @return resource
      */
-    public function downloadToStream($url)
+    public function downloadToStream($url,$encode)
     {
-        return $this->makefopenRequest($url);
+        return $this->makefopenRequest($url,$encode);
     }
 
     public function downloadToFile($url,$file,$isGz=true)

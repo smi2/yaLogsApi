@@ -7,8 +7,20 @@ Docs:
 * [Скрипт интеграция с Logs API](https://github.com/yndx-metrika/logs_api_integration)
 
 
+
+
+# 
+Это реалзация загрузчика данных из Logs API на php с использованием smi2/phpClickhouse
+
+
+
+# 
 !! Скрипт не доделан !!
 
+
+
+
+# 
 Run:
 ```bash
 

@@ -156,10 +156,10 @@ class Connector
      * @param $partNumber int номер части подготовленных логов обработанного запроса.
      * @return resource
      */
-    public function streamPart(logRequest $request,$partNumber)
+    public function streamPart(logRequest $request,$partNumber,$encode)
     {
         return $this->transport()->downloadToStream(
-            '/management/v1/counter/{counterId}/logrequest/'.$request->getRequestId().'/part/'.$partNumber.'/download'
+            '/management/v1/counter/{counterId}/logrequest/'.$request->getRequestId().'/part/'.$partNumber.'/download',$encode
         );
     }
 

@@ -5,6 +5,7 @@ class YLAActions
     private $token=false;
     private $counter=false;
     private $config=[];
+    private $_cl;
 
     public function setToken($token)
     {
@@ -143,6 +144,15 @@ class YLAActions
         return true;
     }
 
+    private function clearRequest(\yaLogsApi\logRequest $request)
+    {
+        $n=new \yaLogsApi\Connector($this->counter,$this->token);
+        $this->msg("Try cancel, request_id = ".$request->getRequestId());
+        $n->clean($request);
+        $n->cancel($request);
+        $request=$n->info($request);
+        $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus(),\Shell::bold);
+    }
     /**
      * Отменить запрос
      *
@@ -162,14 +172,7 @@ class YLAActions
             foreach ($listRequests as $request) {
                 if ($request->getRequestId()==$requestid || $all)
                 {
-                    $this->msg("Try cancel, request_id = ".$request->getRequestId());
-
-                    $n->clean($request);
-                    $n->cancel($request);
-
-
-                    $request=$n->info($request);
-                    $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus(),\Shell::bold);
+                    $this->clearRequest($request);
                 }
 
             }
@@ -177,15 +180,90 @@ class YLAActions
         return true;
     }
 
-    private function streamDownload(\yaLogsApi\Connector $n,\yaLogsApi\logRequest $request,$partsNumber,$gzip)
+    protected function getTableName(\yaLogsApi\logRequest $request)
+    {
+        return $request->getSource();
+    }
+    protected function getTableColumns(\yaLogsApi\logRequest $request)
+    {
+        $fields=$request->getFields();
+        $cols=[];
+        foreach ($fields as $col)
+        {
+            $type=\yaLogsApi\ChTypeFields::getFieldType($col);
+
+            $colName=ucwords(explode(":",$col)[2]);
+            $cols[$colName]=$type;
+        }
+        return $cols;
+    }
+    protected function ch_createTable(\yaLogsApi\logRequest $request)
+    {
+        $typeSource=$this->getTableName($request);
+        $cols=$this->getTableColumns($request);
+
+
+
+
+
+
+        echo "DROP TABLE IF EXISTS $typeSource\n";
+        echo "CREATE TABLE $typeSource (\n";
+        echo implode(",\n",$cols);
+        echo ") ENGINE=StripeLog\n";
+        return true;
+    }
+
+    /**
+     * @return \ClickHouseDB\Client
+     */
+    private function clickhouse()
+    {
+        if (!$this->_cl)
+        {
+
+            $this->_cl=new ClickHouseDB\Client(['host'=>'192.168.1.20','username'=>'default','password'=>'','port'=>'8123']);
+            $this->_cl->ping();
+
+        }
+        return $this->_cl;
+    }
+    private function streamDownload(\yaLogsApi\Connector $n,\yaLogsApi\logRequest $request,$partsNumber,$nogzip)
     {
         $start_time=microtime(true);
-        $this->msg("Download.... part = $partsNumber , size ".$request->getPartSize($partsNumber).' GZ='.($gzip?'true':'false'));
+        // получаем имя таблицы
+
+        $tableName=$this->getTableName($request);
+        $columns_array=array_keys($this->getTableColumns($request));
 
 
-//        $fn=$n->downloadPart($request,$partsNumber,$gzip);
+
+        $this->msg("Download.... part = $partsNumber into `$tableName`, size ".$request->getPartSize($partsNumber).' gzip='.($nogzip?'NO':'yes'));
+
+        $encode=($nogzip?'':'gzip');
+
+        // fopen для скачивания
+        $resourceRead=$n->streamPart($request,$partsNumber,$encode);
+        // включить сжатие
+        $this->clickhouse()->enableHttpCompression(true);
+        $this->clickhouse()->setTimeout(12341234);
+
+
+
+
+        // поток на вставку данных
+        $stream=$this->clickhouse()->insertBatchStream($tableName,$columns_array,'TabSeparatedWithNames');
+
+        // класс вставки из потока в поток
+        $si=new ClickHouseDB\Transport\StreamInsert($resourceRead,$stream,$this->clickhouse()->transport()->getCurler());
+        // исполнить запрос с жатием
+        $state=$si->insert($encode);
+
+        // инфо
+        $size_upload=$state->info_upload();
         $this->msg('done, stream part ,use time '.round(microtime(true)-$start_time,1),[Shell::bold]);
-
+        $this->msg(json_encode($state->info_upload()));
+        return $size_upload;
     }
 
     /**
@@ -193,7 +271,7 @@ class YLAActions
      *
      * @return bool
      */
-    public function downloadCommand($gzip=false)
+    public function downloadCommand($nogzip=false)
     {
         $this->init();
         $n=new \yaLogsApi\Connector($this->counter,$this->token);
@@ -203,18 +281,23 @@ class YLAActions
         {
             foreach ($listRequests as $request)
             {
-                $this->msg("Request_Id:".$request->getRequestId()."\t in date1=".$request->getDate1().' '.$request->getDate2());
+
 
                 $request=$n->info($request);
-                $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus().' ',\Shell::bold);
+                $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus().' count of parts='.sizeof($request->getParts()),\Shell::bold);
 
                 if ($request->isProcessed())
                 {
                     foreach ($request->getPartsNumbers() as $partsNumber)
                     {
-                        $this->streamDownload($n,$request,$partsNumber,$gzip);
+                        $size_upoload=$this->streamDownload($n,$request,$partsNumber,$nogzip);
+                        if ($size_upoload)
+                        {
+
+                        }
                     }
-                    break;
+                    // if success all parts
+//                    $this->clearRequest($request);
                 }
 
             }
