@@ -81,7 +81,8 @@ class Transport
     {
         $url=$this->templateUrl($url);
 
-        $header  = ['Authorization: OAuth '.$this->token,"Transfer-Encoding: chunked"];
+        $header  = ['Authorization: OAuth '.$this->token];
+            //"Transfer-Encoding: chunked"];
 
         if ($encode=='gzip')
         {
@@ -138,7 +139,6 @@ class Transport
 
     public function downloadToFile($url,$file,$isGz=true)
     {
-        echo "!!!! >>>> GZIP = =".($isGz?"Y":"N")."\n";
         $request=$this->makecurlRequest($url);
 
         if ($isGz)
@@ -146,9 +146,10 @@ class Transport
             $request->httpCompression(true);
         }
 
-
-
         $fout = fopen($file, 'w');
+
+
+        $request->setNoProgress(false);
         $request->setResultFileHandle($fout, $isGz)->setCallbackFunction(function (\Curler\Request $request) {
             fclose($request->getResultFileHandle());
         });

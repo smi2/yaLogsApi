@@ -74,7 +74,7 @@ class YLAActions
         $this->init();
 
 
-        foreach ($this->config['hits'] as $col)
+        foreach ($this->config['visits'] as $col)
         {
             $type=\yaLogsApi\ChTypeFields::getFieldType($col);
 
@@ -82,7 +82,7 @@ class YLAActions
             $cols[]="\t$colName \t $type";
 
         }
-        echo "CREATE TABLE visits_fields (\n";
+        echo "CREATE TABLE visits (\n";
         echo implode(",\n",$cols);
         echo ") ENGINE=StripeLog\n";
         return true;
@@ -122,7 +122,7 @@ class YLAActions
         $n=new \yaLogsApi\Connector($this->counter,$this->token);
 
 
-        $ishist=true;
+        $ishist=false;
 
 
         if ($ishist)
@@ -228,6 +228,17 @@ class YLAActions
         }
         return $this->_cl;
     }
+    private function fileDownload(\yaLogsApi\Connector $n,\yaLogsApi\logRequest $request,$partsNumber,$nogzip)
+    {
+
+        $start_time=microtime(true);
+        $this->msg("Download.... part = $partsNumber into file, size ".$request->getPartSize($partsNumber).' gzip='.($nogzip?'NO':'yes'));
+
+        $file_name=$n->downloadPart($request,$partsNumber,!$nogzip);
+        $this->msg('done, stream part ,use time '.round(microtime(true)-$start_time,1)." ; ".filesize($file_name),[Shell::dark_gray]);
+
+        return true;
+    }
     private function streamDownload(\yaLogsApi\Connector $n,\yaLogsApi\logRequest $request,$partsNumber,$nogzip)
     {
         $start_time=microtime(true);
@@ -261,17 +272,22 @@ class YLAActions
 
         // инфо
         $size_upload=$state->info_upload();
-        $this->msg('done, stream part ,use time '.round(microtime(true)-$start_time,1),[Shell::bold]);
-        $this->msg(json_encode($state->info_upload()));
+
+        $this->msg('done, stream part ,use time '.round(microtime(true)-$start_time,1)." ; ".json_encode($state->info_upload()),[Shell::dark_gray]);
+
         return $size_upload;
     }
 
+    public function downloadCommand($nogzip=false)
+    {
+        $this->streamCommand($nogzip,true);
+    }
     /**
      * Загрузить данные
      *
      * @return bool
      */
-    public function downloadCommand($nogzip=false)
+    public function streamCommand($nogzip=false,$onlydownload=false)
     {
         $this->init();
         $n=new \yaLogsApi\Connector($this->counter,$this->token);
@@ -290,7 +306,17 @@ class YLAActions
                 {
                     foreach ($request->getPartsNumbers() as $partsNumber)
                     {
-                        $size_upoload=$this->streamDownload($n,$request,$partsNumber,$nogzip);
+                        if ($onlydownload)
+                        {
+                            $size_upoload=$this->fileDownload($n,$request,$partsNumber,$nogzip);
+                        }
+                        else
+                        {
+                            $size_upoload=$this->streamDownload($n,$request,$partsNumber,$nogzip);
+                        }
+
+
+
                         if ($size_upoload)
                         {
 

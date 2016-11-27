@@ -5,6 +5,11 @@ class ChTypeFields
     // copypaster https://raw.githubusercontent.com/yndx-metrika/logs_api_integration/master/configs/ch_types.json
     private static $field = [
 
+// ------------------------ Визиты ----------------
+// Последовательность действий одного посетителя на сайте (на одном счетчике).
+// Визит завершен, если между действиями посетителя на сайте прошло некоторое время.
+// По умолчанию — 30 минут. Вы можете указать другое время с помощью опции тайм-аут визита.
+
         "ym:s:counterID" => "UInt32",
         "ym:s:watchIDs" => "Array(UInt64)",
         "ym:s:dateTime" => "DateTime",
@@ -17,12 +22,24 @@ class ChTypeFields
         "ym:s:bounce" => "UInt8",
         "ym:s:ipAddress" => "String",
         "ym:s:params" => "Array(String)",
+
+//        Goals Nested
+//    (
+//        ID UInt32,
+//        Serial UInt32,
+//        EventTime DateTime,
+//        Price Int64,
+//        OrderID String,
+//        CurrencyID UInt32
+//    ),
+
         "ym:s:goalsID" => "Array(UInt32)",
         "ym:s:goalsSerialNumber" => "Array(UInt32)",
         "ym:s:goalsDateTime" => "Array(DateTime)",
         "ym:s:goalsPrice" => "Array(Int64)",
         "ym:s:goalsOrder" => "Array(String)",
         "ym:s:goalsCurrency" => "Array(String)",
+
         "ym:s:firstPartyCookie"=>'String',
         "ym:s:lastTrafficSource" => "String",
         "ym:s:lastAdvEngine" => "String",
@@ -83,6 +100,7 @@ class ChTypeFields
         "ym:s:physicalScreenHeight" => "UInt16",
         "ym:s:windowClientWidth" => "UInt16",
         "ym:s:windowClientHeight" => "UInt16",
+
         "ym:s:purchaseID" => "Array(String)",
         "ym:s:purchaseDateTime" => "Array(DateTime)",
         "ym:s:purchaseAffiliation" => "Array(String)",
@@ -92,6 +110,7 @@ class ChTypeFields
         "ym:s:purchaseCoupon" => "Array(String)",
         "ym:s:purchaseCurrency" => "Array(String)",
         "ym:s:purchaseProductQuantity" => "Array(Int64)",
+
         "ym:s:productsPurchaseID" => "Array(String)",
         "ym:s:productsID" => "Array(String)",
         "ym:s:productsName" => "Array(String)",
@@ -108,6 +127,7 @@ class ChTypeFields
         "ym:s:productsCurrency" => "Array(String)",
         "ym:s:productsCoupon" => "Array(String)",
         "ym:s:productsQuantity" => "Array(Int64)",
+
         "ym:s:impressionsURL" => "Array(String)",
         "ym:s:impressionsDateTime" => "Array(DateTime)",
         "ym:s:impressionsProductID" => "Array(String)",
@@ -123,6 +143,7 @@ class ChTypeFields
         "ym:s:impressionsProductPrice" => "Array(Int64)",
         "ym:s:impressionsProductCurrency" => "Array(String)",
         "ym:s:impressionsProductCoupon" => "Array(String)",
+
         "ym:s:lastDirectClickOrderName" => "String",
         "ym:s:lastClickBannerGroupName" => "String",
         "ym:s:lastDirectClickBannerName" => "String",
@@ -130,8 +151,14 @@ class ChTypeFields
         "ym:s:visitID" => "UInt64",
         "ym:s:date" => "Date",
 
+
+
+// ------------------------------- Просмотры -----------------------------------------------------------------------------------------------------------------------------------------
+// Загрузка страницы сайта при переходе посетителя на нее.
+
         "ym:pv:watchID" => "UInt64",
         "ym:pv:counterID" => "UInt32",
+        "ym:pv:date" => "Date",
         "ym:pv:dateTime" => "DateTime",
         "ym:pv:title" => "String",
         "ym:pv:URL" => "String",
@@ -141,6 +168,7 @@ class ChTypeFields
         "ym:pv:UTMMedium" => "String",
         "ym:pv:UTMSource" => "String",
         "ym:pv:UTMTerm" => "String",
+
         "ym:pv:browser" => "String",
         "ym:pv:browserMajorVersion" => "UInt16",
         "ym:pv:browserMinorVersion" => "UInt16",
@@ -150,28 +178,35 @@ class ChTypeFields
         "ym:pv:browserEngineVersion2" => "UInt16",
         "ym:pv:browserEngineVersion3" => "UInt16",
         "ym:pv:browserEngineVersion4" => "UInt16",
+
+
         "ym:pv:browserLanguage" => "String",
         "ym:pv:clientTimeZone" => "Int16",
         "ym:pv:cookieEnabled" => "UInt8",
         "ym:pv:deviceCategory" => "String",
         "ym:pv:flashMajor" => "UInt8",
         "ym:pv:flashMinor" => "UInt8",
+
         "ym:pv:from" => "String",
         "ym:pv:hasGCLID" => "UInt8",
         "ym:pv:ipAddress" => "String",
         "ym:pv:javascriptEnabled" => "UInt8",
         "ym:pv:mobilePhone" => "String",
         "ym:pv:mobilePhoneModel" => "String",
+
         "ym:pv:openstatAd" => "String",
         "ym:pv:openstatCampaign" => "String",
         "ym:pv:openstatService" => "String",
         "ym:pv:openstatSource" => "String",
+
         "ym:pv:operatingSystem" => "String",
         "ym:pv:operatingSystemRoot" => "String",
         "ym:pv:physicalScreenHeight" => "UInt16",
         "ym:pv:physicalScreenWidth" => "UInt16",
+
         "ym:pv:regionCity" => "String",
         "ym:pv:regionCountry" => "String",
+
         "ym:pv:screenColors" => "UInt8",
         "ym:pv:screenFormat" => "UInt16",
         "ym:pv:screenHeight" => "UInt16",
@@ -179,7 +214,9 @@ class ChTypeFields
         "ym:pv:screenWidth" => "UInt16",
         "ym:pv:windowClientHeight" => "UInt16",
         "ym:pv:windowClientWidth" => "UInt16",
+
         "ym:pv:params" => "Array(String)",
+
         "ym:pv:lastTrafficSource" => "String",
         "ym:pv:lastSearchEngine" => "String",
         "ym:pv:lastSearchEngineRoot" => "String",
@@ -192,19 +229,21 @@ class ChTypeFields
         "ym:pv:event" => "UInt8",
         "ym:pv:lastSocialNetwork" => "String",
         "ym:pv:httpError" => "String",
-        "ym:pv:clientID" => "UInt64",
+        "ym:pv:firstPartyCookie"=>'String',
+//        "ym:pv:clientID" => "UInt64",
         "ym:pv:networkType" => "String",
         "ym:pv:lastSocialNetworkProfile" => "String",
         "ym:pv:goalsID" => "Array(UInt32)",
         "ym:pv:shareService" => "String",
         "ym:pv:shareURL" => "String",
         "ym:pv:shareTitle" => "String",
-        "ym:pv:iFrame" => "UInt8",
-        "ym:pv:date" => "Date"
+        "ym:pv:iFrame" => "UInt8"
+
     ];
 
     public static function getAllFieldVisits()
     {
+        $out=[];
         foreach (self::$field as $key=>$type)
         {
             if (stripos($key,'ym:s:')!==false)
