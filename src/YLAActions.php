@@ -6,6 +6,8 @@ class YLAActions
     private $counter=false;
     private $config=[];
     private $_cl;
+    private $_init=false;
+    private $_connector;
 
     public function setToken($token)
     {
@@ -28,6 +30,7 @@ class YLAActions
 
     private function init()
     {
+        if ($this->_init) return true;
         if (!is_file($this->config_file)) throw new Exception('no config file:'.$this->config_file);
 
         $config=include_once $this->config_file;
@@ -56,7 +59,22 @@ class YLAActions
         if (! $this->counter) throw new Exception('Not set counter_id, use --counter=XXX or config');
 
         $this->msg("Use counter : ".$this->counter);
+        $this->_init=true;
         return true;
+    }
+
+    /**
+     * @return \yaLogsApi\Connector
+     */
+    public function connector()
+    {
+        if (!$this->_connector)
+        {
+            $this->init();
+            $this->_connector=new \yaLogsApi\Connector($this->counter,$this->token);
+
+        }
+        return $this->_connector;
     }
 
     public function msg($message,$color=[])
@@ -117,13 +135,7 @@ class YLAActions
         $this->msg("\tDate 1\t:".date('Y-m-d',$date1));
         $this->msg("\tDate 2\t:".date('Y-m-d',$date2));
 
-
-        $this->init();
-        $n=new \yaLogsApi\Connector($this->counter,$this->token);
-
-
         $ishist=false;
-
 
         if ($ishist)
         {
@@ -133,12 +145,12 @@ class YLAActions
         {
             $config_key='visits';
         }
-        $evaluate=$n->evaluate($this->config[$config_key],$config_key,date('Y-m-d',$date1),date('Y-m-d',$date2));
+        $evaluate=$this->connector()->evaluate($this->config[$config_key],$config_key,date('Y-m-d',$date1),date('Y-m-d',$date2));
         var_dump($evaluate);
         if ($evaluate)
         {
             $this->msg("evaluate = ".$evaluate);
-            $n->makeNew($this->config[$config_key],$config_key,date('Y-m-d',$date1),date('Y-m-d',$date2));
+            $this->connector()->makeNew($this->config[$config_key],$config_key,date('Y-m-d',$date1),date('Y-m-d',$date2));
         }
 
         return true;
@@ -146,13 +158,13 @@ class YLAActions
 
     private function clearRequest(\yaLogsApi\logRequest $request)
     {
-        $n=new \yaLogsApi\Connector($this->counter,$this->token);
         $this->msg("Try cancel, request_id = ".$request->getRequestId());
-        $n->clean($request);
-        $n->cancel($request);
-        $request=$n->info($request);
+        $this->connector()->clean($request);
+        $this->connector()->cancel($request);
+        $request=$this->connector()->info($request);
         $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus(),\Shell::bold);
     }
+
     /**
      * Отменить запрос
      *
@@ -161,20 +173,13 @@ class YLAActions
      */
     public function dropCommand($requestid=0,$all=false)
     {
-
-
-        $this->init();
-        $n=new \yaLogsApi\Connector($this->counter,$this->token);
-
-
-        $listRequests=$n->getList();
+        $listRequests=$this->connector()->getList();
         if ($listRequests) {
             foreach ($listRequests as $request) {
                 if ($request->getRequestId()==$requestid || $all)
                 {
                     $this->clearRequest($request);
                 }
-
             }
         }
         return true;
@@ -254,7 +259,7 @@ class YLAActions
         $encode=($nogzip?'':'gzip');
 
         // fopen для скачивания
-        $resourceRead=$n->streamPart($request,$partsNumber,$encode);
+        $resourceRead=$this->connector()->streamPart($request,$partsNumber,$encode);
         // включить сжатие
         $this->clickhouse()->enableHttpCompression(true);
         $this->clickhouse()->setTimeout(12341234);
@@ -289,17 +294,17 @@ class YLAActions
      */
     public function streamCommand($nogzip=false,$onlydownload=false)
     {
-        $this->init();
-        $n=new \yaLogsApi\Connector($this->counter,$this->token);
 
-        $listRequests=$n->getList();
+
+
+        $listRequests=$this->connector()->getList();
         if ($listRequests)
         {
             foreach ($listRequests as $request)
             {
 
 
-                $request=$n->info($request);
+                $request=$this->connector()->info($request);
                 $this->msg("Request_Id:".$request->getRequestId()."\t in status=".$request->getStatus().' count of parts='.sizeof($request->getParts()),\Shell::bold);
 
                 if ($request->isProcessed())
@@ -308,11 +313,11 @@ class YLAActions
                     {
                         if ($onlydownload)
                         {
-                            $size_upoload=$this->fileDownload($n,$request,$partsNumber,$nogzip);
+                            $size_upoload=$this->fileDownload($this->connector(),$request,$partsNumber,$nogzip);
                         }
                         else
                         {
-                            $size_upoload=$this->streamDownload($n,$request,$partsNumber,$nogzip);
+                            $size_upoload=$this->streamDownload($this->connector(),$request,$partsNumber,$nogzip);
                         }
 
 
@@ -332,12 +337,32 @@ class YLAActions
         return true;
     }
 
+    /**
+     * Получить список
+     *
+     * @return bool
+     */
+    public function listCommand()
+    {
+
+        $listRequests=$this->connector()->getList();
+        if ($listRequests)
+        {
+            foreach ($listRequests as $request) {
+                $this->msg("Request_Id:" . $request->getRequestId() . "\t in status=" . $request->getStatus() . ' count of parts=' . sizeof($request->getParts()), \Shell::bold);
+            }
+        }
+        else{
+            $this->msg("Empty list");
+        }
+        return true;
+    }
 
     public function sendCommand()
     {
         $file_name='/tmp/YAM_16750087_29_20161119_20161119_04db_58122561_part0.tsv.deflated';
-        $n=new ClickHouseDB\Client(['host'=>'192.168.1.20','username'=>'default','password'=>'','port'=>'8123']);
-        print_r($n->select('SELECT * FROM hits_fields LIMIT 4')->rows());
+        $cl=new ClickHouseDB\Client(['host'=>'192.168.1.20','username'=>'default','password'=>'','port'=>'8123']);
+        print_r($cl->select('SELECT * FROM hits_fields LIMIT 4')->rows());
         return true;
     }
 
