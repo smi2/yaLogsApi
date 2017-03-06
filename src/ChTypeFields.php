@@ -40,7 +40,7 @@ class ChTypeFields
         "ym:s:goalsOrder" => "Array(String)",
         "ym:s:goalsCurrency" => "Array(String)",
 
-        "ym:s:firstPartyCookie"=>'String',
+//        "ym:s:firstPartyCookie"=>'String',
         "ym:s:lastTrafficSource" => "String",
         "ym:s:lastAdvEngine" => "String",
         "ym:s:lastReferalSource" => "String",
@@ -149,6 +149,7 @@ class ChTypeFields
         "ym:s:lastDirectClickBannerName" => "String",
         "ym:s:networkType" => "String",
         "ym:s:visitID" => "UInt64",
+        "ym:s:clientID" => "UInt64",
         "ym:s:date" => "Date",
 
 
@@ -229,8 +230,8 @@ class ChTypeFields
         "ym:pv:event" => "UInt8",
         "ym:pv:lastSocialNetwork" => "String",
         "ym:pv:httpError" => "String",
-        "ym:pv:firstPartyCookie"=>'String',
-//        "ym:pv:clientID" => "UInt64",
+//        "ym:pv:firstPartyCookie"=>'String',
+        "ym:pv:clientID" => "UInt64",
         "ym:pv:networkType" => "String",
         "ym:pv:lastSocialNetworkProfile" => "String",
         "ym:pv:goalsID" => "Array(UInt32)",
@@ -241,6 +242,19 @@ class ChTypeFields
 
     ];
 
+    public static function getAllFieldHits()
+    {
+        $out=[];
+        foreach (self::$field as $key=>$type)
+        {
+            if (stripos($key,'ym:pv:')!==false)
+            {
+                $out[]=$key;
+            }
+
+        }
+        return $out;
+    }
     public static function getAllFieldVisits()
     {
         $out=[];

@@ -100,9 +100,36 @@ class YLAActions
             $cols[]="\t$colName \t $type";
 
         }
-        echo "CREATE TABLE visits (\n";
+
+        echo "DROP TABLE IF EXISTS yavisits\n;;\n";
+        echo "DROP TABLE IF EXISTS yahits\n;;\n";
+
+        echo "CREATE TABLE yavisits (\n";
         echo implode(",\n",$cols);
-        echo ") ENGINE=StripeLog\n";
+        echo ") ENGINE=MergeTree(Date, intHash32(VisitID), (CounterID, Date, intHash32(VisitID)), 8192)\n;\n\n";
+
+
+        $cols=[];
+        foreach ($this->config['hits'] as $col)
+        {
+            $type=\yaLogsApi\ChTypeFields::getFieldType($col);
+
+            $colName=ucwords(explode(":",$col)[2]);
+            $cols[]="\t$colName \t $type";
+
+        }
+        echo "CREATE TABLE yahits (\n";
+        echo implode(",\n",$cols);
+        echo ") ENGINE=MergeTree(Date, intHash32(WatchID), (CounterID, Date, intHash32(WatchID)), 8192)\n\n";
+
+
+
+
+
+
+
+
+
         return true;
     }
 
@@ -135,7 +162,7 @@ class YLAActions
         $this->msg("\tDate 1\t:".date('Y-m-d',$date1));
         $this->msg("\tDate 2\t:".date('Y-m-d',$date2));
 
-        $ishist=false;
+        $ishist=true;
 
         if ($ishist)
         {
@@ -185,9 +212,10 @@ class YLAActions
         return true;
     }
 
+
     protected function getTableName(\yaLogsApi\logRequest $request)
     {
-        return $request->getSource();
+        return 'ya'.$request->getSource();
     }
     protected function getTableColumns(\yaLogsApi\logRequest $request)
     {
@@ -227,7 +255,10 @@ class YLAActions
         if (!$this->_cl)
         {
 
-            $this->_cl=new ClickHouseDB\Client(['host'=>'192.168.1.20','username'=>'default','password'=>'','port'=>'8123']);
+            $ch=$this->config['clickhouse'];
+            // config
+            $this->_cl=new ClickHouseDB\Client($ch);
+//            $this->
             $this->_cl->ping();
 
         }
